@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#e9f4f1">
+  <title>Petualangan Tumbuh — Jelajah Sekolah</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #203d3a;
+      --muted: #718986;
+      --green: #2f8d72;
+      --mint: #e8f4ed;
+      --paper: rgba(255,255,255,.92);
+      --line: #e6eeea;
+      --gold: #f2b949;
+      --shadow: 0 18px 48px rgba(36, 76, 65, .14);
+    }
+    * { box-sizing: border-box }
+    body { margin: 0; overflow: hidden; color: var(--ink); background: #dcebe1; font-family: "DM Sans", sans-serif; }
+    #world { position: fixed; inset: 0; }
+    #world canvas { display: block; width: 100%; height: 100%; }
+    .grain { position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: .14; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E"); }
+    .topbar { position: fixed; z-index: 3; left: 28px; right: 28px; top: 22px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+    .brand, .progress-card, .tip, .station-prompt, .control-hint { pointer-events: auto; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark { width: 48px; height: 48px; border-radius: 17px; display: grid; place-items: center; color: white; font-size: 23px; background: linear-gradient(145deg,#45a987,#277b66); box-shadow: 0 8px 20px #267e6940; }
+    .brand-copy { line-height: 1.15; text-shadow: 0 1px 10px #fff8; }
+    .brand-copy strong { display: block; font: 900 17px "Nunito",sans-serif; letter-spacing: -.3px; }
+    .brand-copy small { color: #4c7067; font-size: 11px; font-weight: 700; letter-spacing: .5px; }
+    .progress-card { width: 250px; padding: 14px 16px; border: 1px solid #fff; border-radius: 18px; background: #ffffffeb; box-shadow: 0 8px 26px #31584e15; backdrop-filter: blur(12px); }
+    .progress-top { display:flex; justify-content:space-between; align-items:center; font-size: 12px; font-weight: 800; }
+    .progress-top span:last-child { color: var(--green); }
+    .progress-track { height: 7px; background: #e8efeb; border-radius: 9px; margin-top: 10px; overflow: hidden; }
+    .progress-fill { width: 0; height: 100%; border-radius: 9px; background: linear-gradient(90deg,#61c59e,#34896e); transition: width .5s ease; }
+    .tip { position: fixed; z-index: 2; top: 102px; left: 28px; padding: 9px 13px; border: 1px solid #fff; border-radius: 12px; background: #fffffff0; box-shadow: 0 5px 16px #2c615014; color: #58766d; font-size: 11px; font-weight: 700; }
+    .tip b { color: #26836a; }
+    .station-prompt { position: fixed; z-index: 3; bottom: 36px; left: 50%; transform: translate(-50%, 16px); opacity: 0; pointer-events: none; transition: .25s ease; padding: 12px 18px; border:0; border-radius: 16px; color: #fff; background: #203d3aeb; box-shadow: var(--shadow); font: 700 13px "DM Sans"; white-space: nowrap; cursor:pointer; }
+    .station-prompt.show { opacity: 1; transform: translate(-50%, 0); pointer-events:auto; }
+    .station-prompt kbd { display:inline-grid; place-items:center; min-width: 24px; height:24px; margin-right: 7px; border-radius:7px; color:var(--ink); background:#fff; font:800 12px "DM Sans"; }
+    .control-hint { position: fixed; z-index: 2; right: 28px; bottom: 28px; color: #42645b; font-size: 11px; font-weight: 700; text-shadow: 0 1px 8px white; }
+    .control-hint span { padding: 4px 7px; margin-left: 3px; border-radius: 6px; background: #ffffffcf; box-shadow: 0 2px 6px #31584e18; }
+    .music-toggle { position:fixed;z-index:4;top:103px;right:28px;display:flex;align-items:center;gap:9px;padding:9px 13px;border:1px solid #fff;border-radius:13px;background:#ffffffed;color:#55756b;box-shadow:0 6px 20px #31584e18;cursor:pointer;font:800 11px "DM Sans";transition:.18s; }
+    .music-toggle:hover { transform:translateY(-1px);background:#fff; }
+    .music-toggle[aria-pressed="true"] { color:#28795f; }
+    .music-icon { font-size:16px; }
+    .music-bars { height:14px;display:flex;align-items:center;gap:2px; }
+    .music-bars i { width:3px;height:4px;border-radius:3px;background:#52aa83; }
+    .music-toggle[aria-pressed="true"] .music-bars i { animation:soundbar .55s ease-in-out infinite alternate; }
+    .music-bars i:nth-child(2) { animation-delay:.18s!important; }
+    .music-bars i:nth-child(3) { animation-delay:.33s!important; }
+    .music-bars i:nth-child(4) { animation-delay:.1s!important; }
+    @keyframes soundbar { to { height:13px; } }
+    .welcome { position: fixed; z-index: 5; inset: 0; display: grid; place-items: center; background: linear-gradient(135deg,#d9eee3cc,#edf4df9c); backdrop-filter: blur(5px); transition: opacity .45s, visibility .45s; }
+    .welcome.hidden { opacity: 0; visibility: hidden; }
+    .welcome-card { width: min(470px, calc(100vw - 36px)); padding: 35px; border-radius: 28px; border: 1px solid #fff; background: #ffffffed; box-shadow: 0 28px 80px #295d4b28; text-align:center; }
+    .welcome-emoji { font-size: 53px; line-height: 1; margin-bottom: 14px; }
+    .welcome-card h1 { margin: 0 0 8px; font: 900 29px "Nunito",sans-serif; letter-spacing: -.8px; }
+    .welcome-card p { margin: 0 auto 22px; max-width: 350px; color: #6b837d; font-size: 14px; line-height: 1.7; }
+    .primary-btn { border:0; border-radius: 13px; padding: 13px 22px; cursor:pointer; color:white; background:linear-gradient(135deg,#43aa84,#28795f); box-shadow:0 8px 20px #328b6b42; font:800 14px "DM Sans"; transition:transform .15s,filter .15s; }
+    .primary-btn:hover { transform:translateY(-2px); filter:brightness(1.05); }
+    .welcome-card .mini { display:block; margin-top:15px; color:#98aaa4; font-size:10px; font-weight:700; letter-spacing:.6px; }
+    .lesson-backdrop { position:fixed; z-index:6; inset:0; display:none; place-items:center; padding:20px; background:#163b35a6; backdrop-filter:blur(7px); }
+    .lesson-backdrop.open { display:grid; }
+    .lesson-card { width:min(780px,100%); max-height:min(700px,94vh); overflow:auto; position:relative; border-radius:26px; background:#fff; box-shadow:0 28px 90px #153d3355; animation:pop .25s ease; }
+    @keyframes pop { from { opacity:0; transform:translateY(12px) scale(.98) } to {opacity:1;transform:none} }
+    .lesson-head { display:flex; gap:14px; align-items:center; padding:22px 26px 18px; border-bottom:1px solid #edf1ee; }
+    .lesson-icon { flex:0 0 48px; width:48px;height:48px;display:grid;place-items:center;border-radius:16px;background:#e8f4ed;font-size:25px; }
+    .lesson-title { flex:1; }
+    .lesson-title small { color:#4e9a7c;font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase; }
+    .lesson-title h2 { margin:3px 0 0;font:900 19px "Nunito",sans-serif; }
+    .close-btn { width:36px;height:36px;border:0;border-radius:12px;background:#f0f4f1;color:#58726b;cursor:pointer;font-size:19px; }
+    .lesson-body { padding:22px 26px 26px; }
+    .question { margin:0 0 17px;color:#49635c;font-size:14px;line-height:1.6;font-weight:600; }
+    .illustration-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px; margin-bottom:18px; }
+    .illustration { min-height:94px; position:relative; overflow:hidden; display:flex; align-items:center; gap:12px; padding:13px; border:1px solid #e8eeea; border-radius:16px; background:linear-gradient(135deg,var(--wash,#f5f7f3),#fff); }
+    .illustration .art { flex:0 0 54px;width:54px;height:54px;border-radius:15px;display:grid;place-items:center;background:var(--art,#e5f1e8);font-size:30px; }
+    .illustration strong { display:block;margin-bottom:3px;font-size:12px; }
+    .illustration small { color:#80928c;font-size:10px;line-height:1.35; }
+    .answer-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr));gap:9px; }
+    .answer { min-height:47px; display:flex;align-items:center;gap:10px;text-align:left;padding:10px 12px;border:1px solid #e3ebe6;border-radius:13px;background:#fff;color:#405a53;cursor:pointer;font:700 12px "DM Sans";transition:.16s; }
+    .answer:hover:not(:disabled) { border-color:#84c5a5;background:#f4faf6;transform:translateY(-1px); }
+    .answer:disabled { cursor:default; }
+    .answer .letter { flex:0 0 25px;height:25px;display:grid;place-items:center;border-radius:8px;background:#f0f4f1;color:#71857e;font-size:10px;font-weight:800; }
+    .answer.correct { border-color:#56b789;background:#edf8f1;color:#287a5a; }
+    .answer.wrong { border-color:#e8a4a0;background:#fff2f0;color:#a9524c; }
+    .feedback { display:none;margin-top:13px;padding:12px 14px;border-radius:12px;background:#edf8f1;color:#397960;font-size:12px;line-height:1.55;font-weight:600; }
+    .feedback.visible { display:block; }
+    .lesson-foot { display:flex;justify-content:space-between;align-items:center;margin-top:17px; }
+    .lesson-count { color:#91a19b;font-size:11px;font-weight:700; }
+    .next-btn { display:none;padding:10px 16px;border:0;border-radius:11px;background:#34896e;color:#fff;cursor:pointer;font:800 12px "DM Sans"; }
+    .next-btn.visible { display:block; }
+    .all-done { text-align:center;padding:45px 28px; }
+    .all-done .trophy { font-size:64px; }
+    .all-done h2 { margin:12px 0 7px;font:900 26px "Nunito",sans-serif; }
+    .all-done p { color:#71857e;font-size:14px;line-height:1.7; }
+    .puzzle-layout { display:flex;align-items:center;gap:22px;padding:17px;border-radius:18px;background:#f4f8f4; }
+    .puzzle-board { flex:0 0 280px;display:grid;grid-template-columns:repeat(2,1fr);gap:5px;padding:6px;border-radius:14px;background:#dce9df; }
+    .puzzle-piece { height:92px;border:0;border-radius:8px;background-size:200% 200%;background-repeat:no-repeat;cursor:pointer;transition:transform .16s,box-shadow .16s; }
+    .puzzle-piece:hover { transform:scale(.98); }
+    .puzzle-piece.selected { outline:3px solid #45a981;outline-offset:1px;z-index:1; }
+    .puzzle-copy { color:#70867d;font-size:12px;line-height:1.65; }
+    .puzzle-copy strong { display:block;margin-bottom:5px;color:#3a6254;font-size:14px; }
+    .puzzle-copy button { margin-top:12px; }
+    .mobile-stick { display:none; position:fixed;z-index:3;left:22px;bottom:22px;width:122px;height:122px;touch-action:none; }
+    .stick-base { position:absolute;inset:0;border-radius:50%;border:1px solid #fff9;background:#ffffff63;backdrop-filter:blur(5px); }
+    .stick-knob { position:absolute;left:37px;top:37px;width:48px;height:48px;border-radius:50%;background:#fff;box-shadow:0 4px 15px #31584e35; }
+    @media (max-width:640px) {
+      .topbar { left:15px;right:15px;top:14px; }
+      .brand-mark { width:40px;height:40px;border-radius:14px;font-size:19px; }
+      .brand-copy strong { font-size:14px; }.brand-copy small { font-size:9px; }
+      .progress-card { width:142px;padding:11px 12px; }
+      .progress-top { font-size:10px; }
+      .tip { top:67px;left:15px;font-size:9px;padding:7px 9px; }
+      .music-toggle { top:66px;right:15px;padding:7px 9px;font-size:9px;gap:6px; }
+      .control-hint { display:none; }
+      .mobile-stick { display:block; }
+      .station-prompt { bottom:38px;font-size:11px; }
+      .lesson-card { max-height:94vh;border-radius:21px; }
+      .lesson-head { padding:17px 17px 14px; }.lesson-body { padding:17px; }
+      .lesson-title h2 { font-size:16px; }.illustration { min-height:78px;padding:9px;gap:8px; }
+      .illustration .art { width:43px;height:43px;flex-basis:43px;font-size:24px;border-radius:12px; }
+      .answer-list { gap:7px; }.answer { font-size:10px;padding:8px;gap:7px; }
+      .puzzle-layout { flex-direction:column;align-items:stretch;gap:12px;padding:12px; }
+      .puzzle-board { flex-basis:auto;width:min(100%,340px);align-self:center; }.puzzle-piece { height:76px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="world"></div><div class="grain"></div>
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark">✿</div><div class="brand-copy"><strong>Petualangan Tumbuh</strong><small>JELAJAH SEKOLAH</small></div></div>
+    <div class="progress-card"><div class="progress-top"><span>Jejak belajarmu</span><span id="progress-label">0 / 10</span></div><div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div></div>
+  </header>
+  <div class="tip">Jelajahi halaman sekolah, lalu <b>temukan 10 titik belajar</b></div>
+  <button class="music-toggle" id="music-toggle" type="button" aria-pressed="false" aria-label="Nyalakan musik ceria"><span class="music-icon">♫</span><span id="music-label">Musik mati</span><span class="music-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span></button>
+  <button class="station-prompt" id="station-prompt"><kbd>E</kbd><span>Mulai belajar</span></button>
+  <div class="control-hint"><span>W</span><span>A</span><span>S</span><span>D</span> bergerak &nbsp;·&nbsp; mouse untuk melihat</div>
+  <div class="mobile-stick" id="mobile-stick"><div class="stick-base"></div><div class="stick-knob" id="stick-knob"></div></div>
+
+  <div class="welcome" id="welcome">
+    <div class="welcome-card">
+      <div class="welcome-emoji">🏫🌿</div>
+      <h1>Setiap hari, kita tumbuh!</h1>
+      <p>Jelajahi halaman sekolah, temukan cerita-cerita kecil tentang bertumbuh, dan selesaikan tantangan seru di sepanjang perjalanan.</p>
+      <button class="primary-btn" id="start-btn">Mulai petualangan <span>→</span></button>
+      <span class="mini">10 CERITA · SATU PETUALANGAN BESAR</span>
+    </div>
+  </div>
+
+  <div class="lesson-backdrop" id="lesson-backdrop">
+    <section class="lesson-card" id="lesson-card" role="dialog" aria-modal="true" aria-labelledby="lesson-heading"></section>
+  </div>
+
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js" } }
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+
+    const lessons = [
+      { icon:"🌱", title:"Dulu dan sekarang", question:"Pilih gambar yang menunjukkan kamu semakin mandiri.", art:[["👧🏻","Dulu","Selalu dibantu menyiapkan tas"],["🎒","Sekarang","Menyiapkan perlengkapan sendiri"]], answers:["Dulu selalu dibantu, sekarang menyiapkan tas sendiri","Sekarang menunggu orang lain mengerjakan semuanya","Dulu dan sekarang tidak ada perubahan","Membuang perlengkapan setelah dipakai"], correct:0, explain:"Kemandirian tumbuh saat kita belajar melakukan hal-hal yang sesuai usia sendiri." },
+      { icon:"🔥", title:"Belajar dari pengalaman", question:"Kamu pernah menyentuh benda panas. Apa yang sebaiknya dilakukan saat melihat benda panas lagi?", art:[["🔥","Benda panas","Kenali bahayanya dan jaga jarak"],["🧤","Minta bantuan","Panggil orang dewasa bila perlu"]], answers:["Menyentuhnya lagi supaya yakin","Menjaga jarak dan memberi tahu orang dewasa","Mengajak teman menyentuhnya","Menyiramnya tanpa memberi tahu siapa pun"], correct:1, explain:"Pengalaman mengajarkan kita untuk waspada. Jaga jarak dari benda panas dan minta bantuan orang dewasa." },
+      { icon:"📚", title:"Rajin berlatih membaca", question:"Kamu berlatih membaca setiap hari. Apa yang terjadi jika terus berlatih?", art:[["📖","Latihan rutin","Sedikit demi sedikit setiap hari"],["✨","Makin lancar","Membaca terasa lebih mudah"]], answers:["Membaca menjadi makin lancar dan banyak tahu","Kita lupa semua kata yang sudah dipelajari","Tidak ada perubahan sama sekali","Buku menjadi lebih berat"], correct:0, explain:"Latihan yang tekun membantu kemampuan membaca berkembang. Setiap langkah kecil itu berarti!" },
+      { icon:"🧩", title:"Puzzle sekolah", question:"Potongan mana yang melengkapi gambar sekolah? Perhatikan atap, jendela, dan pintunya.", art:[["🏫","Gambar sekolah","Atap merah, dinding kuning, pintu biru"],["🧩","Potongan hilang","Cari bentuk dan warna yang cocok"]], answers:["Potongan atap merah dengan sisi miring","Potongan awan biru tanpa dinding","Potongan rumput hijau tanpa pintu","Potongan jendela ungu berbentuk bulat"], correct:0, explain:"Hebat! Mengamati bentuk dan warna membantu kita menyusun potongan menjadi gambar utuh." },
+      { icon:"💛", title:"Tumbuh menjadi diri sendiri", question:"Pilih gambar yang menunjukkan perubahan kepribadian seiring bertambahnya usia.", art:[["🙈","Saat kecil","Malu berbicara di depan kelas"],["🙋","Sekarang","Berani mencoba dan menyapa teman"]], answers:["Dari malu mencoba menjadi berani berusaha","Dari suka berbagi menjadi suka mengejek","Dari berani menjadi tidak mau mencoba","Tidak pernah berubah sedikit pun"], correct:0, explain:"Kita bisa tumbuh menjadi lebih berani dan percaya diri. Setiap orang berkembang dengan waktunya sendiri." },
+      { icon:"🤝", title:"Antre dengan tertib", question:"Teman-temanmu selalu mengantre dengan tertib. Apa yang sebaiknya kamu lakukan?", art:[["🧑‍🤝‍🧑","Teman-teman","Menunggu giliran bersama"],["🚶","Giliranmu","Berdiri rapi di belakang"]], answers:["Ikut mengantre dan menunggu giliran","Menyerobot supaya lebih cepat","Mendorong teman di depan","Pergi tanpa mengantre"], correct:0, explain:"Mengantre dengan tertib adalah kebiasaan baik. Kita menghargai hak teman dan membuat semua nyaman." },
+      { icon:"📏", title:"Tubuh dan kemampuan", question:"Mana yang menunjukkan tubuh bertambah tinggi, dan mana yang menunjukkan kemampuan baru?", art:[["📏","Tubuh bertambah tinggi","Perubahan ukuran tubuh"],["🛴","Kemampuan baru","Belajar mengendarai sepeda"]], answers:["Tinggi badan bertambah = tubuh; belajar mengikat tali = kemampuan","Belajar membaca = tinggi badan; sepatu baru = kemampuan","Baju berubah warna = tubuh; bertambah tinggi = kemampuan","Semua contoh hanya perubahan tubuh"], correct:0, explain:"Tinggi badan adalah perubahan fisik. Belajar keterampilan baru adalah perubahan kemampuan." },
+      { icon:"🎨", title:"Banyak cara untuk berkembang", question:"Cocokkan kegiatan dengan kemampuan. Mana pasangan yang semuanya tepat?", art:[["🏃","Berlari & menggambar","Gerak tubuh dan kreativitas"],["💬","Berbicara & berpikir","Menyampaikan ide dan mencari solusi"],["🤝","Bekerja sama & jujur","Peduli dan dapat dipercaya"],["🌬️","Mengendalikan emosi","Menenangkan diri saat kesal"]], answers:["Berlari–gerak, menggambar–kreatif, bekerja sama–peduli, jujur–dapat dipercaya","Berlari–membaca, menggambar–berlari, jujur–marah","Berbicara–berlari, berpikir–menggambar, kerja sama–sendiri","Semua kegiatan hanya melatih tubuh"], correct:0, explain:"Kita berkembang dengan banyak cara: tubuh, pikiran, perasaan, dan hubungan dengan orang lain." },
+      { icon:"🏠", title:"Keluarga dan sekolah", question:"Mana contoh kemiripan yang bisa diwarisi dari orang tua dan mana kebiasaan yang dipelajari di sekolah?", art:[["👨‍👩‍👧","Keluarga","Rambut ikal mirip ibu"],["🏫","Sekolah","Belajar mengantre dan bergiliran"]], answers:["Rambut ikal mirip orang tua = kemiripan; mengantre = kebiasaan dari sekolah","Mengantre = kemiripan; warna kesukaan = pelajaran sekolah","Membaca = kemiripan; bentuk hidung = kebiasaan sekolah","Semua hal hanya didapat dari sekolah"], correct:0, explain:"Sebagian ciri mirip keluarga, sementara kebiasaan baik bisa kita pelajari dan latih di sekolah." },
+      { icon:"🌈", title:"Setiap anak punya cerita", question:"Lihat enam kejadian ini. Pilih kesimpulan yang tepat tentang belajar dan bertumbuh.", art:[["📖","Terus berlatih","Membaca sedikit demi sedikit"],["🧩","Mencoba lagi","Belajar dari kesalahan"],["🏃","Cara yang berbeda","Ada yang suka berlari"],["🎨","Kelebihan yang unik","Ada yang suka menggambar"],["💬","Berbagi pikiran","Berbicara membantu menyampaikan ide"],["🤝","Saling mendukung","Bekerja sama menyelesaikan tugas"]], answers:["Terus belajar itu penting; setiap anak unik; kemampuan saling membantu","Semua anak harus bisa hal yang sama pada waktu yang sama","Kalau sulit sekali, artinya tidak akan bisa","Kemampuan berpikir tidak berhubungan dengan berbicara"], correct:0, explain:"Tiga hal penting: terus belajar, menghargai perbedaan, dan tahu bahwa kemampuan kita saling mendukung." }
+    ];
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color("#c9e6ef");
+    scene.fog = new THREE.Fog("#dcebe0", 40, 100);
+    const camera = new THREE.PerspectiveCamera(54, innerWidth / innerHeight, .1, 180);
+    const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:"high-performance" });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.8));
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.18;
+    document.querySelector("#world").appendChild(renderer.domElement);
+
+    scene.add(new THREE.HemisphereLight("#eaf8ff", "#738b62", 2.0));
+    const sun = new THREE.DirectionalLight("#fff1d2", 3.1);
+    sun.position.set(-18, 30, 14); sun.castShadow = true;
+    sun.shadow.mapSize.set(2048,2048);
+    sun.shadow.camera.left=-38;sun.shadow.camera.right=38;sun.shadow.camera.top=38;sun.shadow.camera.bottom=-38;
+    sun.shadow.bias=-.0002;
+    scene.add(sun);
+
+    const mat = (color, roughness=.85) => new THREE.MeshStandardMaterial({color,roughness});
+    const mats = {
+      grass:mat("#85aa72"), grassDark:mat("#729962"), path:mat("#dfcba6"), cream:mat("#fff3da"),
+      wall:mat("#f7d99e"), roof:mat("#bd6957"), roof2:mat("#d98568"), trim:mat("#fff7e7"),
+      glass:mat("#9bcbd1",.45), wood:mat("#a66f4c"), darkWood:mat("#76503c"),
+      leaf1:mat("#5f9b68"), leaf2:mat("#82b975"), leaf3:mat("#438760"), trunk:mat("#876149"),
+      blue:mat("#71b8c5"), red:mat("#e78668"), yellow:mat("#f2c65f"), purple:mat("#a593c8"),
+      white:mat("#fff7e9"), metal:mat("#698b82",.55), groundLine:mat("#f3e7c9")
+    };
+    const boxGeo = new THREE.BoxGeometry(1,1,1);
+    function box(parent, x,y,z,sx,sy,sz,material, cast=true, receive=true) {
+      const mesh=new THREE.Mesh(boxGeo,material);mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);
+      mesh.castShadow=cast;mesh.receiveShadow=receive;parent.add(mesh);return mesh;
+    }
+    function sphere(parent,x,y,z,sx,sy,sz,material,segments=12) {
+      const mesh=new THREE.Mesh(new THREE.SphereGeometry(1,segments,Math.max(8,segments-2)),material);
+      mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);mesh.castShadow=true;parent.add(mesh);return mesh;
+    }
+    function cylinder(parent,x,y,z,r1,r2,h,material,segments=8) {
+      const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,segments),material);
+      mesh.position.set(x,y,z);mesh.castShadow=true;parent.add(mesh);return mesh;
+    }
+    function cone(parent,x,y,z,r,h,material,segments=4) {
+      const mesh=new THREE.Mesh(new THREE.ConeGeometry(r,h,segments),material);
+      mesh.position.set(x,y,z);mesh.castShadow=true;parent.add(mesh);return mesh;
+    }
+    function addGround() {
+      const g=new THREE.Mesh(new THREE.PlaneGeometry(150,150),mats.grass);
+      g.rotation.x=-Math.PI/2;g.position.y=-.12;g.receiveShadow=true;scene.add(g);
+      const yard=box(scene,0,-.045,0,50,.12,42,mats.grassDark,false,true);
+      yard.material=mat("#80a86f");
+      // A soft-edged central lawn and a warm, looping walkway.
+      box(scene,0,.02,0,34,.08,27,mat("#91b77c"),false,true);
+      const pathMat=mats.path;
+      box(scene,0,.08,14,39,.1,3.8,pathMat,false,true);
+      box(scene,-17,.08,0,3.8,.1,28,pathMat,false,true);
+      box(scene,17,.08,0,3.8,.1,28,pathMat,false,true);
+      box(scene,0,.08,-13,39,.1,3.8,pathMat,false,true);
+      box(scene,0,.09,0,3.5,.1,28,pathMat,false,true);
+      box(scene,0,.09,0,34,.1,3.5,pathMat,false,true);
+      // Painted court lines.
+      const court=box(scene,-10,.13,4,10,.025,7,mat("#789c70"),false,false);
+      for (let x=-14;x<=-6;x+=8) box(scene,x,.15,4,.09,.02,7,mats.groundLine,false,false);
+      box(scene,-10,.15,.5,10,.02,.08,mats.groundLine,false,false);
+      const center=new THREE.Mesh(new THREE.TorusGeometry(1.15,.045,6,24),mats.groundLine);
+      center.rotation.x=Math.PI/2;center.position.set(-10,.17,4);scene.add(center);
+      // Welcome plaza.
+      const plaza=new THREE.Mesh(new THREE.CylinderGeometry(5.1,5.1,.2,48),mats.path);
+      plaza.position.set(0,.08,0);plaza.receiveShadow=true;scene.add(plaza);
+      const inner=new THREE.Mesh(new THREE.CylinderGeometry(4.5,4.5,.12,48),mat("#91b77c"));
+      inner.position.set(0,.19,0);inner.receiveShadow=true;scene.add(inner);
+      // Small, bright stepping-stone details.
+      for(let i=0;i<32;i++){
+        const a=i/32*Math.PI*2,r=14.3;
+        const stone=new THREE.Mesh(new THREE.CylinderGeometry(.13,.16,.07,8),i%2?mats.cream:mats.yellow);
+        stone.position.set(Math.cos(a)*r,.16,Math.sin(a)*r);scene.add(stone);
+      }
+    }
+    function makeSchool() {
+      const group=new THREE.Group();group.position.set(0,0,-22);scene.add(group);
+      box(group,0,3.2,0,21,6.2,7,mats.wall);
+      box(group,0,6.36,0,21.5,.28,7.5,mats.trim);
+      // Roof planes create a recognizable pitched-roof silhouette.
+      const roofGeo=new THREE.BoxGeometry(11,.32,8.5);
+      for(const side of [-1,1]){
+        const roof=new THREE.Mesh(roofGeo,mats.roof);roof.position.set(side*5.2,7.45,0);
+        roof.rotation.z=side*-.42;roof.castShadow=true;group.add(roof);
+      }
+      box(group,0,7.43,0,.42,.42,8.7,mats.roof2);
+      box(group,0,1.15,3.62,3.1,2.3,.25,mats.blue);
+      box(group,0,2.43,3.79,3.25,.18,.2,mats.trim);
+      box(group,-.02,1.12,3.79,.16,2.15,.15,mats.trim);
+      for(let x=-8;x<=8;x+=4){
+        if(Math.abs(x)<2)continue;
+        box(group,x,3.4,3.61,1.9,1.8,.2,mats.glass);
+        box(group,x,3.4,3.75,.12,1.9,.12,mats.trim);
+        box(group,x,3.4,3.76,2,.12,.12,mats.trim);
+        box(group,x,4.5,3.7,2.15,.12,.35,mats.trim);
+        box(group,x,2.34,3.7,2.15,.13,.35,mats.trim);
+      }
+      // School sign.
+      box(group,0,5.35,3.78,5.4,.86,.24,mats.white);
+      const signText=makeText("SEKOLAH CERIA",{font:"800 54px Nunito",color:"#347d68"});
+      signText.position.set(0,5.29,3.92);signText.scale.set(3.9,.48,1);group.add(signText);
+      // Front steps.
+      for(let i=0;i<3;i++)box(group,0,.28+i*.16,4.05+i*.48,4.6-i*.5,.2,.9,mats.cream);
+      // Flag.
+      cylinder(group,-9,8.6,1,.08,.08,4.1,mats.metal);
+      box(group,-8.25,9.45,1,1.5,.72,.05,mats.red);
+      return group;
+    }
+    function makeText(text,opts={}) {
+      const canvas=document.createElement("canvas");canvas.width=1024;canvas.height=256;
+      const c=canvas.getContext("2d");c.clearRect(0,0,1024,256);
+      c.font=opts.font||"800 80px Nunito";c.fillStyle=opts.color||"#fff";c.textAlign="center";c.textBaseline="middle";
+      c.fillText(text,512,128);
+      const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
+      const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));
+      sprite.scale.set(5,1.25,1);return sprite;
+    }
+    function makeTree(x,z,scale=1) {
+      const t=new THREE.Group();t.position.set(x,0,z);t.scale.setScalar(scale);scene.add(t);
+      cylinder(t,0,1.1,0,.26,.38,2.2,mats.trunk,7);
+      sphere(t,0,2.7,0,1.15,1.18,1.05,mats.leaf1,9);
+      sphere(t,-.6,2.45,.16,.72,.75,.7,mats.leaf2,8);
+      sphere(t,.58,2.48,-.12,.73,.8,.68,mats.leaf3,8);
+      sphere(t,.05,3.32,.08,.76,.72,.75,mats.leaf2,8);
+      return t;
+    }
+    function makeBench(x,z,rot=0) {
+      const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=rot;scene.add(g);
+      box(g,0,.72,0,2.1,.18,.62,mats.wood);
+      box(g,0,1.03,-.23,2.1,.55,.13,mats.wood);
+      for(const x0 of [-.78,.78]){box(g,x0,.35,0,.13,.7,.13,mats.darkWood);box(g,x0,.38,-.2,.13,.7,.13,mats.darkWood);}
+    }
+    function makePlayground() {
+      const g=new THREE.Group();g.position.set(10,0,6);scene.add(g);
+      // Climbing frame and slide.
+      for(const x of [-1.4,1.4])for(const z of [-.8,.8])cylinder(g,x,1.25,z,.09,.09,2.5,mats.red,8);
+      for(let y=.45;y<2.2;y+=.42)box(g,0,y,.82,2.8,.08,.08,mats.yellow);
+      box(g,0,2.5,0,3.3,.16,2.1,mats.blue);
+      const slide=new THREE.Mesh(new THREE.BoxGeometry(1.25,.12,3.2),mats.red);
+      slide.position.set(0,1.18,2.1);slide.rotation.x=-.36;slide.castShadow=true;g.add(slide);
+      for(const x of [-.56,.56])cylinder(g,x,.63,2.8,.06,.06,1.2,mats.metal,8);
+      // Swing set.
+      for(const x of [3.4,5.7]){const p=cylinder(g,x,1.65,-.1,.07,.07,3.3,mats.purple,8);p.rotation.z=.12;}
+      const beam=box(g,4.55,3.2,-.1,3,.13,.13,mats.purple);
+      for(const x of [4,5.1]){
+        const rope=cylinder(g,x,1.95,-.1,.025,.025,2.25,mats.cream,6);
+        box(g,x,.78,-.1,.65,.1,.35,mats.yellow);
+      }
+    }
+    function makeLamp(x,z) {
+      const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
+      cylinder(g,0,1.6,0,.09,.12,3.2,mats.metal,8);
+      sphere(g,0,3.3,0,.35,.2,.35,mats.yellow,10);
+    }
+    function makeStation(index, x,z, color) {
+      const group=new THREE.Group();group.position.set(x,0,z);scene.add(group);
+      const badgeMat=mat(color,.55);
+      const post=cylinder(group,0,.72,0,.11,.14,1.44,mats.cream,8);
+      const halo=new THREE.Mesh(new THREE.TorusGeometry(.78,.075,8,32),badgeMat);
+      halo.rotation.x=Math.PI/2;halo.position.y=2.15;group.add(halo);
+      const orb=sphere(group,0,2.15,0,.64,.64,.64,badgeMat,16);
+      const badge=makeText(String(index+1).padStart(2,"0"),{font:"900 92px Nunito",color:"#ffffff"});
+      badge.position.set(0,2.14,.59);badge.scale.set(.74,.28,1);group.add(badge);
+      const ground=new THREE.Mesh(new THREE.TorusGeometry(1.05,.035,6,36),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.43}));
+      ground.rotation.x=Math.PI/2;ground.position.y=.12;group.add(ground);
+      group.userData={orb,halo,ground,index,baseY:2.15};
+      return group;
+    }
+    function makePlayer() {
+      const root=new THREE.Group();scene.add(root);root.position.set(0,0,3.6);
+      const body=new THREE.Group();body.position.y=0;root.add(body);
+      const skin=mat("#d99b73"), shirt=mat("#4e9e7d"), shorts=mat("#3f6171"), hair=mat("#49382f"), shoes=mat("#fff0d6");
+      const torso=box(body,0,1.18,0,.68,.78,.4,shirt);
+      sphere(body,0,1.92,0,.39,.43,.36,skin,16);
+      // Hair cap and fringe.
+      sphere(body,0,2.18,-.045,.4,.27,.39,hair,12);
+      sphere(body,-.22,2.07,.27,.17,.19,.16,hair,10);
+      sphere(body,.08,2.09,.31,.2,.16,.12,hair,10);
+      // Face, eyes, smile.
+      sphere(body,-.13,1.94,.326,.038,.05,.024,mat("#372f2a"),8);
+      sphere(body,.13,1.94,.326,.038,.05,.024,mat("#372f2a"),8);
+      const smile=new THREE.Mesh(new THREE.TorusGeometry(.1,.018,6,14,Math.PI),mat("#8c5142"));
+      smile.position.set(0,1.79,.34);smile.rotation.z=Math.PI;body.add(smile);
+      box(body,0,.69,0,.55,.28,.37,shorts);
+      const limbs=[];
+      for(const side of [-1,1]){
+        const arm=new THREE.Group();arm.position.set(side*.42,1.42,0);body.add(arm);
+        const armMesh=cylinder(arm,0,-.3,0,.13,.105,.62,skin,8);armMesh.rotation.z=side*-.13;
+        sphere(arm,0,-.62,.02,.13,.13,.13,skin,8);
+        const leg=new THREE.Group();leg.position.set(side*.18,.55,0);body.add(leg);
+        cylinder(leg,0,-.26,0,.15,.13,.52,shorts,8);
+        box(leg,0,-.57,.1,.25,.16,.39,shoes);
+        limbs.push({arm,leg,side});
+      }
+      // Backpack.
+      box(body,0,1.2,-.28,.48,.56,.22,mat("#e8a65a"));
+      box(body,0,1.08,-.405,.28,.22,.04,mat("#f3c574"));
+      root.userData={body,limbs};
+      return root;
+    }
+
+    addGround();
+    makeSchool();
+    for(const [x,z,s] of [[-24,-20,1.3],[24,-20,1.25],[-24,20,1.1],[24,20,1.25],[-22,0,.9],[22,-3,1],[0,20,.8],[-14,-18,.8],[14,-18,.8],[-14,18,.9],[14,18,.8],[-7,-18,.75],[8,-18,.78],[-23,9,.9],[23,11,.85]])makeTree(x,z,s);
+    makeBench(-7,1,.4);makeBench(7,-3,-.6);makeBench(-7,-8,Math.PI/2);
+    makePlayground();
+    for(const [x,z] of [[-17,-10],[17,-10],[-17,10],[17,10],[0,17]])makeLamp(x,z);
+    // Flower beds give the courtyard a softer, lived-in feel.
+    for(const [x,z] of [[-4,-9],[4,-9],[-4,9],[4,9],[-13,-5],[13,-5]]) {
+      const bed=box(scene,x,.25,z,2.5,.4,1.2,mat("#a97c57"));
+      for(let i=0;i<7;i++){
+        const fx=x+(Math.random()-.5)*2, fz=z+(Math.random()-.5)*.8;
+        sphere(scene,fx,.56,fz,.18,.15,.18,[mats.red,mats.yellow,mats.purple,mats.white][i%4],8);
+      }
+    }
+    const positions=[[-16,11],[-16,3],[-16,-6],[-11,-14],[0,-14],[11,-14],[16,-6],[16,3],[16,11],[0,12]];
+    const colors=["#54a98a","#ec916d","#e9b64d","#8b9ece","#d47d9f","#61aeb4","#dc8955","#8aab62","#a68ac2","#459b7c"];
+    const stations=positions.map(([x,z],i)=>makeStation(i,x,z,colors[i]));
+    const player=makePlayer();
+
+    const keys=new Set();
+    let activeStation=-1, completed=new Set(), locked=false, yaw=0, pitch=.2, pointerDown=false, previousX=0, previousY=0;
+    const cameraTarget=new THREE.Vector3();
+    const moveVector=new THREE.Vector3();
+    const clock=new THREE.Clock();
+    const prompt=document.querySelector("#station-prompt");
+    const lessonBackdrop=document.querySelector("#lesson-backdrop");
+    const lessonCard=document.querySelector("#lesson-card");
+    const progressLabel=document.querySelector("#progress-label");
+    const progressFill=document.querySelector("#progress-fill");
+    const stick=document.querySelector("#mobile-stick"), knob=document.querySelector("#stick-knob");
+    let joystick={x:0,y:0};
+    const musicToggle=document.querySelector("#music-toggle");
+    const musicLabel=document.querySelector("#music-label");
+    const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+    const melody=[72,null,76,79,null,76,72,79,81,null,79,76,null,79,84,81,79,null,76,72,null,76,79,84,81,null,79,76,72,null,74,76];
+    const chords=[{root:48,notes:[60,64,67]},{root:43,notes:[59,62,67]},{root:45,notes:[57,60,64]},{root:41,notes:[57,60,65]}];
+    let audioContext=null,musicGain=null,musicTimer=null,musicPlaying=false,nextMusicTime=0,musicStep=0,noiseBuffer=null;
+
+    function midiFrequency(note){return 440*Math.pow(2,(note-69)/12);}
+    function playTone(note,time,duration,wave,volume){
+      const oscillator=audioContext.createOscillator(),gain=audioContext.createGain();
+      oscillator.type=wave;oscillator.frequency.setValueAtTime(midiFrequency(note),time);
+      gain.gain.setValueAtTime(.0001,time);
+      gain.gain.exponentialRampToValueAtTime(volume,time+.018);
+      gain.gain.exponentialRampToValueAtTime(Math.max(.0001,volume*.2),time+duration*.55);
+      gain.gain.exponentialRampToValueAtTime(.0001,time+duration);
+      oscillator.connect(gain);gain.connect(musicGain);oscillator.start(time);oscillator.stop(time+duration+.02);
+    }
+    function playPad(notes,time){
+      notes.forEach(note=>playTone(note,time,1.35,"sine",.018));
+    }
+    function playNoise(time,duration,volume,frequency){
+      const source=audioContext.createBufferSource(),filter=audioContext.createBiquadFilter(),gain=audioContext.createGain();
+      source.buffer=noiseBuffer;filter.type="highpass";filter.frequency.setValueAtTime(frequency,time);
+      gain.gain.setValueAtTime(volume,time);gain.gain.exponentialRampToValueAtTime(.0001,time+duration);
+      source.connect(filter);filter.connect(gain);gain.connect(musicGain);source.start(time);source.stop(time+duration+.01);
+    }
+    function playKick(time){
+      const oscillator=audioContext.createOscillator(),gain=audioContext.createGain();
+      oscillator.type="sine";oscillator.frequency.setValueAtTime(135,time);oscillator.frequency.exponentialRampToValueAtTime(48,time+.13);
+      gain.gain.setValueAtTime(.12,time);gain.gain.exponentialRampToValueAtTime(.0001,time+.16);
+      oscillator.connect(gain);gain.connect(musicGain);oscillator.start(time);oscillator.stop(time+.17);
+    }
+    function scheduleMusicStep(time){
+      const step=musicStep%32,bar=Math.floor(step/8),beat=step%8,chord=chords[bar%chords.length];
+      if(beat===0){playPad(chord.notes,time);playTone(chord.root,time,.34,"triangle",.085);}
+      if(beat===4)playTone(chord.root+7,time,.3,"triangle",.07);
+      const melodyNote=melody[step];
+      if(melodyNote!==null)playTone(melodyNote,time,.2,"triangle",.055);
+      if(beat===0||beat===4)playKick(time);
+      if(beat===2||beat===6)playNoise(time,.12,.025,1100);
+      if(beat%2===1)playNoise(time,.045,.009,6500);
+      musicStep=(musicStep+1)%melody.length;
+    }
+    function fillMusicSchedule(){
+      const stepDuration=60/116/2;
+      if(nextMusicTime<audioContext.currentTime-.5)nextMusicTime=audioContext.currentTime+.05;
+      while(nextMusicTime<audioContext.currentTime+.12){
+        scheduleMusicStep(nextMusicTime);
+        nextMusicTime+=stepDuration;
+      }
+    }
+    async function startMusic(){
+      if(!AudioContextClass){
+        musicLabel.textContent="Audio tidak tersedia";
+        musicToggle.title="Browser ini tidak mendukung Web Audio";
+        return;
+      }
+      if(!audioContext){
+        audioContext=new AudioContextClass();
+        musicGain=audioContext.createGain();musicGain.gain.value=.0001;musicGain.connect(audioContext.destination);
+        noiseBuffer=audioContext.createBuffer(1,audioContext.sampleRate,audioContext.sampleRate);
+        const samples=noiseBuffer.getChannelData(0);
+        for(let i=0;i<samples.length;i++)samples[i]=Math.random()*2-1;
+      }
+      if(audioContext.state==="suspended")await audioContext.resume();
+      if(musicPlaying)return;
+      musicPlaying=true;
+      musicGain.gain.cancelScheduledValues(audioContext.currentTime);
+      musicGain.gain.setTargetAtTime(.72,audioContext.currentTime,.22);
+      nextMusicTime=audioContext.currentTime+.06;
+      fillMusicSchedule();
+      musicTimer=setInterval(fillMusicSchedule,25);
+      musicToggle.setAttribute("aria-pressed","true");
+      musicToggle.setAttribute("aria-label","Matikan musik ceria");
+      musicLabel.textContent="Musik aktif";
+    }
+    function stopMusic(){
+      if(!audioContext||!musicPlaying)return;
+      musicPlaying=false;
+      clearInterval(musicTimer);musicTimer=null;
+      musicGain.gain.cancelScheduledValues(audioContext.currentTime);
+      musicGain.gain.setTargetAtTime(.0001,audioContext.currentTime,.12);
+      musicToggle.setAttribute("aria-pressed","false");
+      musicToggle.setAttribute("aria-label","Nyalakan musik ceria");
+      musicLabel.textContent="Musik mati";
+    }
+    function celebrateAnswer(){
+      if(!musicPlaying)return;
+      const time=audioContext.currentTime+.03;
+      [76,79,84].forEach((note,index)=>playTone(note,time+index*.1,.28,"sine",.08));
+    }
+    async function enableMusic(){
+      try{
+        await startMusic();
+      }catch(error){
+        console.error("Musik tidak dapat diputar.",error);
+        musicLabel.textContent="Musik gagal";
+        musicToggle.title="Periksa izin atau pengaturan audio browser, lalu coba lagi";
+      }
+    }
+    musicToggle.addEventListener("click",()=>{
+      if(musicPlaying)stopMusic();
+      else enableMusic();
+    });
+
+    function updateProgress() {
+      const amount=completed.size;
+      progressLabel.textContent=`${amount} / ${lessons.length}`;
+      progressFill.style.width=`${amount/lessons.length*100}%`;
+    }
+    function lessonMarkup(index) {
+      const item=lessons[index];
+      const art=item.art.map(([emoji,title,desc])=>`<div class="illustration"><div class="art">${emoji}</div><div><strong>${title}</strong><small>${desc||""}</small></div></div>`).join("");
+      const answers=item.answers.map((answer,i)=>`<button class="answer" data-answer="${i}"><span class="letter">${String.fromCharCode(65+i)}</span>${answer}</button>`).join("");
+      if(index===3)return `<div class="lesson-head"><div class="lesson-icon">${item.icon}</div><div class="lesson-title"><small>Pos belajar 04 · 4 dari 10</small><h2 id="lesson-heading">${item.title}</h2></div><button class="close-btn" aria-label="Tutup">×</button></div><div class="lesson-body"><p class="question">${item.question}</p><div class="puzzle-layout"><div class="puzzle-board" id="puzzle-board"></div><div class="puzzle-copy"><strong>Susun potongan gambarnya!</strong>Ketuk dua potongan untuk menukar tempatnya. Cocokkan atap, dinding, dan pintu sekolah.<br><button class="primary-btn" id="check-puzzle">Periksa susunan</button></div></div><div class="feedback" id="feedback"></div><div class="lesson-foot"><span class="lesson-count">Potongan gambar sekolah</span><button class="next-btn" id="next-btn">Kembali jelajah →</button></div></div>`;
+      return `<div class="lesson-head"><div class="lesson-icon">${item.icon}</div><div class="lesson-title"><small>Pos belajar ${String(index+1).padStart(2,"0")} · ${index+1} dari 10</small><h2 id="lesson-heading">${item.title}</h2></div><button class="close-btn" aria-label="Tutup">×</button></div><div class="lesson-body"><p class="question">${item.question}</p><div class="illustration-grid">${art}</div><div class="answer-list">${answers}</div><div class="feedback" id="feedback"></div><div class="lesson-foot"><span class="lesson-count">${completed.has(index)?"Sudah kamu selesaikan":"Pilih jawaban yang paling tepat"}</span><button class="next-btn" id="next-btn">Kembali jelajah →</button></div></div>`;
+    }
+    function showLesson(index) {
+      if(index<0||index>=lessons.length)return;
+      locked=true;
+      const item=lessons[index];
+      lessonCard.innerHTML=lessonMarkup(index);
+      lessonBackdrop.classList.add("open");
+      lessonCard.querySelector(".close-btn").addEventListener("click",closeLesson);
+      const answerButtons=[...lessonCard.querySelectorAll(".answer")];
+      const feedback=lessonCard.querySelector("#feedback");
+      const next=lessonCard.querySelector("#next-btn");
+      if(index===3){
+        const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180"><rect width="240" height="180" fill="#d9f0e9"/><circle cx="199" cy="27" r="15" fill="#f3c65e"/><path d="M0 139h240v41H0z" fill="#8fba78"/><path d="M34 79 120 22l86 57-10 12-76-49-76 49z" fill="#ce745d"/><path d="M52 82h136v68H52z" fill="#f4d18e"/><rect x="105" y="106" width="30" height="44" rx="3" fill="#4a8f85"/><rect x="67" y="99" width="25" height="23" rx="2" fill="#8cc8d0"/><rect x="148" y="99" width="25" height="23" rx="2" fill="#8cc8d0"/><path d="M114 126h5v5h-5z" fill="#f5d16f"/><rect x="93" y="66" width="54" height="13" rx="4" fill="#fff3d8"/><text x="120" y="76" text-anchor="middle" font-family="Arial" font-size="8" font-weight="bold" fill="#498273">SEKOLAH</text><path d="M0 155q28-13 57 0t59 0 64 0 60 0v25H0z" fill="#73a867"/></svg>`;
+        const image=`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+        let pieces=[2,0,3,1],selected=-1;
+        const board=lessonCard.querySelector("#puzzle-board");
+        const drawPieces=()=>{
+          board.innerHTML=pieces.map((piece,slot)=>`<button class="puzzle-piece${selected===slot?" selected":""}" aria-label="Potongan puzzle ${slot+1}" style="background-image:url('${image}');background-position:${piece%2===0?"left":"right"} ${piece<2?"top":"bottom"}" data-slot="${slot}"></button>`).join("");
+          board.querySelectorAll(".puzzle-piece").forEach(piece=>piece.addEventListener("click",()=>{
+            const slot=Number(piece.dataset.slot);
+            if(selected<0){selected=slot;drawPieces();return;}
+            if(selected!==slot)[pieces[selected],pieces[slot]]=[pieces[slot],pieces[selected]];
+            selected=-1;drawPieces();
+          }));
+        };
+        drawPieces();
+        lessonCard.querySelector("#check-puzzle").addEventListener("click",()=>{
+          if(pieces.every((piece,slot)=>piece===slot)){
+            feedback.textContent=`🌟 ${item.explain}`;
+            if(!completed.has(index))celebrateAnswer();
+            completed.add(index);updateProgress();next.classList.add("visible");
+          }else{
+            feedback.textContent="Belum pas, coba tukar lagi potongan atap atau dindingnya."; 
+          }
+          feedback.classList.add("visible");
+        });
+      }
+      answerButtons.forEach(button=>button.addEventListener("click",()=>{
+        if(button.disabled)return;
+        const picked=Number(button.dataset.answer);
+        answerButtons.forEach(b=>b.disabled=true);
+        if(picked===item.correct){
+          button.classList.add("correct");
+          feedback.textContent=`🌟 ${item.explain}`;
+          feedback.classList.add("visible");
+          if(!completed.has(index))celebrateAnswer();
+          completed.add(index);updateProgress();
+          next.classList.add("visible");
+        }else{
+          button.classList.add("wrong");
+          answerButtons[item.correct].classList.add("correct");
+          feedback.textContent=`Coba ingat lagi, ya. ${item.explain}`;
+          feedback.classList.add("visible");
+          next.textContent="Coba lagi ↻";
+          next.classList.add("visible");
+          next.dataset.retry="true";
+        }
+      }));
+      next.addEventListener("click",()=>{
+        if(next.dataset.retry){showLesson(index);return;}
+        if(completed.size===lessons.length){
+          lessonCard.innerHTML=`<div class="all-done"><div class="trophy">🏆🌿</div><h2>Petualangan selesai!</h2><p>Kamu sudah menjelajahi semua cerita. Terus belajar, berlatih, dan bangga pada setiap langkah kecilmu!</p><button class="primary-btn" id="return-to-yard">Kembali ke halaman sekolah</button></div>`;
+          lessonCard.querySelector("#return-to-yard").addEventListener("click",closeLesson);
+          return;
+        }
+        closeLesson();
+      });
+    }
+    function closeLesson() {
+      lessonBackdrop.classList.remove("open");locked=false;
+    }
+    lessonBackdrop.addEventListener("click",e=>{if(e.target===lessonBackdrop)closeLesson();});
+    prompt.addEventListener("click",()=>{if(activeStation>=0&&!locked)showLesson(activeStation);});
+    addEventListener("keydown",e=>{
+      if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key))e.preventDefault();
+      keys.add(e.key.toLowerCase());
+      if(e.key.toLowerCase()==="e"&&!locked&&activeStation>=0)showLesson(activeStation);
+      if(e.key==="Escape"&&locked)closeLesson();
+    });
+    addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
+    renderer.domElement.addEventListener("pointerdown",e=>{pointerDown=true;previousX=e.clientX;previousY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId);});
+    renderer.domElement.addEventListener("pointermove",e=>{
+      if(!pointerDown||locked)return;
+      const dx=e.clientX-previousX,dy=e.clientY-previousY;
+      yaw-=dx*.0045;pitch=THREE.MathUtils.clamp(pitch+dy*.003,-.12,.75);
+      previousX=e.clientX;previousY=e.clientY;
+    });
+    renderer.domElement.addEventListener("pointerup",()=>pointerDown=false);
+    renderer.domElement.addEventListener("pointercancel",()=>pointerDown=false);
+    let stickRect=null;
+    function setStick(e){
+      stickRect=stick.getBoundingClientRect();
+      const cx=stickRect.left+stickRect.width/2,cy=stickRect.top+stickRect.height/2;
+      const dx=e.clientX-cx,dy=e.clientY-cy,max=38,len=Math.hypot(dx,dy),scale=len>max?max/len:1;
+      joystick={x:dx*scale/max,y:dy*scale/max};
+      knob.style.transform=`translate(${joystick.x*38}px,${joystick.y*38}px)`;
+    }
+    stick.addEventListener("pointerdown",e=>{stick.setPointerCapture(e.pointerId);setStick(e);});
+    stick.addEventListener("pointermove",e=>{if(stick.hasPointerCapture(e.pointerId))setStick(e);});
+    const resetStick=()=>{joystick={x:0,y:0};knob.style.transform="";};
+    stick.addEventListener("pointerup",resetStick);stick.addEventListener("pointercancel",resetStick);
+    document.querySelector("#start-btn").addEventListener("click",()=>{enableMusic();document.querySelector("#welcome").classList.add("hidden");});
+    document.querySelector("#welcome").addEventListener("click",e=>{if(e.target.id==="welcome")document.querySelector("#welcome").classList.add("hidden");});
+
+    const lookDir=new THREE.Vector3();
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt=Math.min(clock.getDelta(),.04),time=clock.elapsedTime;
+      const forward=(keys.has("w")||keys.has("arrowup")?-1:0)+(keys.has("s")||keys.has("arrowdown")?1:0)-joystick.y;
+      const side=(keys.has("d")||keys.has("arrowright")?1:0)-(keys.has("a")||keys.has("arrowleft")?1:0)+joystick.x;
+      moveVector.set(side,0,forward);
+      const moving=moveVector.lengthSq()>.02&&!locked;
+      if(moving){
+        moveVector.normalize().applyAxisAngle(new THREE.Vector3(0,1,0),yaw);
+        player.position.addScaledVector(moveVector,dt*4.25);
+        player.position.x=THREE.MathUtils.clamp(player.position.x,-21,21);
+        player.position.z=THREE.MathUtils.clamp(player.position.z,-18,18);
+        const desired=Math.atan2(moveVector.x,moveVector.z);
+        let diff=(desired-player.rotation.y+Math.PI*3)%(Math.PI*2)-Math.PI;
+        player.rotation.y+=diff*Math.min(1,dt*11);
+      }
+      const phase=moving?time*10:0;
+      player.userData.limbs.forEach(({arm,leg,side:s})=>{
+        const swing=moving?Math.sin(phase+s*Math.PI)*.52:0;
+        leg.rotation.x=swing;arm.rotation.x=-swing*.72;
+      });
+      player.userData.body.position.y=moving?Math.abs(Math.sin(phase*2))*.045:0;
+      player.position.y=moving?Math.abs(Math.sin(phase*2))*.035:0;
+      let nearest=-1,nearestD=3.05;
+      stations.forEach((s,i)=>{
+        const d=Math.hypot(player.position.x-s.position.x,player.position.z-s.position.z);
+        s.userData.orb.position.y=s.userData.baseY+Math.sin(time*2.2+i)*.12;
+        s.userData.halo.rotation.z=time*.38+i;
+        s.userData.ground.material.opacity=.3+Math.sin(time*2+i)*.12;
+        if(d<nearestD){nearest=i;nearestD=d;}
+      });
+      activeStation=nearest;
+      prompt.classList.toggle("show",nearest>=0&&!locked);
+      if(nearest>=0)prompt.querySelector("span").textContent=completed.has(nearest)?`Ulangi: ${lessons[nearest].title}`:`Belajar: ${lessons[nearest].title}`;
+      const target=new THREE.Vector3(player.position.x,1.35,player.position.z);
+      cameraTarget.lerp(target,1-Math.exp(-dt*5.5));
+      const distance=8.5;
+      camera.position.set(
+        cameraTarget.x+Math.sin(yaw)*distance,
+        cameraTarget.y+3.5-pitch*1.6,
+        cameraTarget.z+Math.cos(yaw)*distance
+      );
+      camera.lookAt(cameraTarget.x,cameraTarget.y+1,cameraTarget.z);
+      renderer.render(scene,camera);
+    }
+    camera.position.set(0,7,12);camera.lookAt(0,1,0);
+    animate();
+    addEventListener("resize",()=>{
+      camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);
+      renderer.setPixelRatio(Math.min(devicePixelRatio,1.8));
+    });
+  </script>
+</body>
+</html>
